@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивен речник - English Plus 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .card-perspective { perspective: 1000px; }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            top: 0; left: 0;
+        }
+        .card-back { transform: rotateY(180deg); }
+        
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        canvas { touch-action: none; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+
+    <div class="max-w-4xl mx-auto p-4 pb-20">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-indigo-600 mb-2">Английски Речник</h1>
+            <p class="text-gray-600">Научени: <span id="progress-count" class="font-bold text-green-600">0</span></p>
+        </header>
+
+        <div class="flex overflow-x-auto hide-scroll gap-2 mb-6 p-2 bg-white rounded-xl shadow-sm border border-gray-200" id="tabs-container">
+        </div>
+
+        <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        </div>
+
+    </div>
+
+    <script>
+        const wordData = {
+            "Starter Unit": {
+                icon: "🏁",
+                words: [
+                    { en: "afternoon", bg: "следобед", icon: "☀️" },
+                    { en: "annoyed", bg: "ядосан", icon: "😠" },
+                    { en: "ate", bg: "ядох", icon: "🍽️" },
+                    { en: "bought", bg: "купих", icon: "🛍️" },
+                    { en: "cereal", bg: "зърнена закуска", icon: "🥣" },
+                    { en: "chat", bg: "чат / разговор", icon: "💬" },
+                    { en: "concert", bg: "концерт", icon: "🎵" },
+                    { en: "cook", bg: "готвя", icon: "🍳" },
+                    { en: "depend", bg: "завися", icon: "🔗" },
+                    { en: "did", bg: "направих", icon: "✅" },
+                    { en: "do my homework", bg: "правя си домашното", icon: "📝" },
+                    { en: "excellent", bg: "отличен", icon: "🌟" },
+                    { en: "festival", bg: "фестивал", icon: "🎉" },
+                    { en: "finish", bg: "завършвам", icon: "🏁" },
+                    { en: "get up", bg: "ставам", icon: "🛏️" },
+                    { en: "go shopping", bg: "отивам на пазар", icon: "🛒" },
+                    { en: "headphones", bg: "слушалки", icon: "🎧" },
+                    { en: "smartphone", bg: "смартфон", icon: "📱" },
+                    { en: "sunglasses", bg: "слънчеви очила", icon: "🕶️" }
+                ]
+            },
+            "Unit 1": {
+                icon: "👗",
+                words: [
+                    { en: "accident", bg: "инцидент", icon: "💥" },
+                    { en: "app", bg: "приложение", icon: "📱" },
+                    { en: "blouse", bg: "блуза", icon: "👚" },
+                    { en: "boot", bg: "ботуш", icon: "👢" },
+                    { en: "chapter", bg: "глава (от книга)", icon: "📖" },
+                    { en: "colourful", bg: "цветен", icon: "🌈" },
+                    { en: "comic", bg: "комикс", icon: "🦸" },
+                    { en: "cool", bg: "готин", icon: "😎" },
+                    { en: "dress", bg: "рокля", icon: "👗" },
+                    { en: "expert", bg: "експерт", icon: "🎓" },
+                    { en: "fashion", bg: "мода", icon: "✨" },
+                    { en: "gadget", bg: "джаджа", icon: "⚙️" },
+                    { en: "hat", bg: "шапка", icon: "🧢" },
+                    { en: "hero", bg: "герой", icon: "🦸‍♂️" },
+                    { en: "hoodie", bg: "суичър", icon: "🧥" },
+                    { en: "jacket", bg: "яке", icon: "🧥" },
+                    { en: "jeans", bg: "дънки", icon: "👖" },
+                    { en: "popular", bg: "популярен", icon: "⭐" },
+                    { en: "shirt", bg: "риза", icon: "👔" },
+                    { en: "shorts", bg: "къси панталони", icon: "🩳" },
+                    { en: "skirt", bg: "пола", icon: "👗" },
+                    { en: "socks", bg: "чорапи", icon: "🧦" },
+                    { en: "storm", bg: "буря", icon: "⛈️" },
+                    { en: "style", bg: "стил", icon: "💇‍♀️" },
+                    { en: "trainers", bg: "маратонки", icon: "👟" },
+                    { en: "trousers", bg: "панталони", icon: "👖" }
+                ]
+            },
+            "Unit 2": {
+                icon: "👃",
+                words: [
+                    { en: "amazing", bg: "изумителен", icon: "😲" },
+                    { en: "artificial", bg: "изкуствен", icon: "🤖" },
+                    { en: "awesome", bg: "страхотен", icon: "🤩" },
+                    { en: "awful", bg: "ужасен", icon: "🤢" },
+                    { en: "blind", bg: "сляп", icon: "🦯" },
+                    { en: "blood", bg: "кръв", icon: "🩸" },
+                    { en: "deaf", bg: "глух", icon: "🧏" },
+                    { en: "delicious", bg: "много вкусен", icon: "😋" },
+                    { en: "disgusting", bg: "отвратителен", icon: "🤮" },
+                    { en: "exhausted", bg: "изтощен", icon: "😫" },
+                    { en: "flavour", bg: "вкус", icon: "👅" },
+                    { en: "fragrance", bg: "аромат", icon: "🌸" },
+                    { en: "frightening", bg: "плашещ", icon: "😱" },
+                    { en: "furious", bg: "бесен", icon: "😡" },
+                    { en: "loud", bg: "шумен", icon: "🔊" },
+                    { en: "perfume", bg: "парфюм", icon: "🧴" },
+                    { en: "scent", bg: "миризма", icon: "👃" },
+                    { en: "sense", bg: "сетиво", icon: "🖐️" },
+                    { en: "sight", bg: "зрение", icon: "👁️" },
+                    { en: "sound", bg: "звук", icon: "🎵" },
+                    { en: "taste", bg: "вкус", icon: "👅" }
+                ]
+            },
+            "Unit 3": {
+                icon: "⛰️",
+                words: [
+                    { en: "achievement", bg: "постижение", icon: "🏆" },
+                    { en: "beach", bg: "плаж", icon: "🏖️" },
+                    { en: "cave", bg: "пещера", icon: "🦇" },
+                    { en: "challenge", bg: "предизвикателство", icon: "🎯" },
+                    { en: "cliff", bg: "скала", icon: "🧗" },
+                    { en: "climb", bg: "катеря се", icon: "🧗‍♂️" },
+                    { en: "deep", bg: "дълбок", icon: "🌊" },
+                    { en: "desert", bg: "пустиня", icon: "🐫" },
+                    { en: "dive", bg: "гмуркам се", icon: "🤿" },
+                    { en: "equipment", bg: "оборудване", icon: "🎒" },
+                    { en: "forest", bg: "гора", icon: "🌲" },
+                    { en: "hike", bg: "правя преход", icon: "🥾" },
+                    { en: "ice", bg: "лед", icon: "🧊" },
+                    { en: "instructor", bg: "инструктор", icon: "🧑‍🏫" },
+                    { en: "kayak", bg: "каяк", icon: "🛶" },
+                    { en: "lake", bg: "езеро", icon: "🏞️" },
+                    { en: "mountain", bg: "планина", icon: "⛰️" },
+                    { en: "ocean", bg: "океан", icon: "🌊" },
+                    { en: "river", bg: "река", icon: "🏞️" },
+                    { en: "snow", bg: "сняг", icon: "❄️" },
+                    { en: "surf", bg: "сърфирам", icon: "🏄" },
+                    { en: "valley", bg: "долина", icon: "🌄" },
+                    { en: "volcano", bg: "вулкан", icon: "🌋" },
+                    { en: "wave", bg: "вълна", icon: "🌊" }
+                ]
+            },
+            "Unit 4": {
+                icon: "🌍",
+                words: [
+                    { en: "affect", bg: "влияя", icon: "🔄" },
+                    { en: "afford", bg: "позволявам си (финансово)", icon: "💸" },
+                    { en: "air", bg: "въздух", icon: "💨" },
+                    { en: "battery", bg: "батерия", icon: "🔋" },
+                    { en: "bin", bg: "кофа за боклук", icon: "🗑️" },
+                    { en: "branch", bg: "клон", icon: "🌿" },
+                    { en: "cause", bg: "причинявам", icon: "🔥" },
+                    { en: "damage", bg: "повреждам", icon: "💔" },
+                    { en: "destroy", bg: "разрушавам", icon: "🏚️" },
+                    { en: "develop", bg: "развивам", icon: "📈" },
+                    { en: "earth", bg: "Земя", icon: "🌍" },
+                    { en: "ecological", bg: "екологичен", icon: "🌱" },
+                    { en: "electronic", bg: "електронен", icon: "🔌" },
+                    { en: "environment", bg: "околна среда", icon: "🌳" },
+                    { en: "farming", bg: "земеделие", icon: "🚜" },
+                    { en: "fix", bg: "поправям", icon: "🔧" },
+                    { en: "increase", bg: "увеличавам", icon: "⬆️" },
+                    { en: "natural", bg: "естествен", icon: "🍃" },
+                    { en: "planet", bg: "планета", icon: "🪐" },
+                    { en: "plant", bg: "растение", icon: "🪴" },
+                    { en: "plastic", bg: "пластмаса", icon: "🥤" },
+                    { en: "pollute", bg: "замърсявам", icon: "🏭" },
+                    { en: "pollution", bg: "замърсяване", icon: "🛢️" },
+                    { en: "power", bg: "енергия", icon: "⚡" },
+                    { en: "protect", bg: "предпазвам", icon: "🛡️" },
+                    { en: "recycle", bg: "рециклирам", icon: "♻️" },
+                    { en: "reduce", bg: "намалявам", icon: "📉" },
+                    { en: "resource", bg: "ресурс", icon: "💎" },
+                    { en: "rubbish", bg: "боклук", icon: "🗑️" },
+                    { en: "save", bg: "спасявам / пестя", icon: "💾" },
+                    { en: "solar", bg: "слънчев", icon: "☀️" },
+                    { en: "solution", bg: "решение", icon: "💡" },
+                    { en: "space", bg: "космос / пространство", icon: "🌌" },
+                    { en: "throw away", bg: "изхвърлям", icon: "🚮" },
+                    { en: "useful", bg: "полезен", icon: "🛠️" },
+                    { en: "waste", bg: "пилея", icon: "⏳" },
+                    { en: "world", bg: "свят", icon: "🗺️" }
+                ]
+            },
+            "Unit 5": {
+                icon: "🚀",
+                words: [
+                    { en: "adopt", bg: "осиновявам", icon: "👨‍👩‍👧" },
+                    { en: "age group", bg: "възрастова група", icon: "👥" },
+                    { en: "agile", bg: "пъргав", icon: "🏃" },
+                    { en: "ahead", bg: "напред", icon: "➡️" },
+                    { en: "ambitious", bg: "амбициозен", icon: "🎯" },
+                    { en: "audition", bg: "прослушване", icon: "🎤" },
+                    { en: "average", bg: "среден", icon: "📊" },
+                    { en: "catastrophe", bg: "катастрофа", icon: "🌋" },
+                    { en: "colonize", bg: "колонизирам", icon: "🚀" },
+                    { en: "connected", bg: "свързан", icon: "🔗" },
+                    { en: "crowded", bg: "претъпкан", icon: "🧑‍🤝‍🧑" },
+                    { en: "definitely", bg: "определено", icon: "✔️" },
+                    { en: "doubt", bg: "съмнявам се", icon: "🤔" },
+                    { en: "earn money", bg: "печеля пари", icon: "💵" },
+                    { en: "epidemic", bg: "епидемия", icon: "🦠" },
+                    { en: "get a degree", bg: "вземам диплома", icon: "🎓" },
+                    { en: "get a job", bg: "намирам си работа", icon: "💼" },
+                    { en: "get married", bg: "оженвам се", icon: "💍" },
+                    { en: "get old", bg: "остарявам", icon: "👴" },
+                    { en: "get rich", bg: "забогатявам", icon: "💰" },
+                    { en: "gravity", bg: "гравитация", icon: "🍎" },
+                    { en: "have a family", bg: "създавам семейство", icon: "👨‍👩‍👦" },
+                    { en: "hopefully", bg: "дано / с надежда", icon: "🤞" },
+                    { en: "likely", bg: "вероятно", icon: "🎲" },
+                    { en: "manipulate", bg: "манипулирам", icon: "🎭" },
+                    { en: "optimistic", bg: "оптимистичен", icon: "😊" },
+                    { en: "retire young", bg: "пенсионирам се млад", icon: "🌴" },
+                    { en: "robot", bg: "робот", icon: "🤖" },
+                    { en: "settle down", bg: "установявам се", icon: "🏡" },
+                    { en: "survivor", bg: "оцелял", icon: "💪" },
+                    { en: "travel around", bg: "пътувам наоколо", icon: "✈️" }
+                ]
+            },
+            "Unit 6": {
+                icon: "🏫",
+                words: [
+                    { en: "ability", bg: "способност", icon: "🧠" },
+                    { en: "alternative", bg: "алтернатива", icon: "🔄" },
+                    { en: "apply for a job", bg: "кандидатствам за работа", icon: "📄" },
+                    { en: "attend school", bg: "посещавам училище", icon: "🏫" },
+                    { en: "behave", bg: "държa се (добре)", icon: "😇" },
+                    { en: "bell", bg: "звънец", icon: "🔔" },
+                    { en: "challenging", bg: "предизвикателен", icon: "🧗" },
+                    { en: "chance", bg: "шанс", icon: "🍀" },
+                    { en: "creative", bg: "креативен", icon: "🎨" },
+                    { en: "do homework", bg: "правя си домашното", icon: "📝" },
+                    { en: "emergency", bg: "спешен случай", icon: "🚨" },
+                    { en: "engineer", bg: "инженер", icon: "👷" },
+                    { en: "fail exams", bg: "провалям се на изпити", icon: "❌" },
+                    { en: "get good marks", bg: "изкарвам добри оценки", icon: "A+" },
+                    { en: "homeschooling", bg: "домашно обучение", icon: "🏠" },
+                    { en: "institution", bg: "институция", icon: "🏛️" },
+                    { en: "journalism", bg: "журналистика", icon: "📰" },
+                    { en: "lawyer", bg: "адвокат", icon: "⚖️" },
+                    { en: "management", bg: "управление", icon: "📊" },
+                    { en: "obey rules", bg: "спазвам правилата", icon: "📋" },
+                    { en: "panic", bg: "паникьосвам се", icon: "😱" },
+                    { en: "pass exams", bg: "вземам изпити", icon: "✅" },
+                    { en: "passion", bg: "страст", icon: "❤️" },
+                    { en: "pressure", bg: "напрежение", icon: "😓" },
+                    { en: "primary school", bg: "основно училище", icon: "🎒" },
+                    { en: "qualification", bg: "квалификация", icon: "📜" },
+                    { en: "school uniform", bg: "училищна униформа", icon: "👔" },
+                    { en: "science", bg: "наука", icon: "🔬" },
+                    { en: "secondary school", bg: "гимназия", icon: "🏫" },
+                    { en: "sociable", bg: "общителен", icon: "🗣️" },
+                    { en: "take classes", bg: "посещавам часове", icon: "📚" },
+                    { en: "teaching", bg: "преподаване", icon: "👩‍🏫" },
+                    { en: "truth", bg: "истина", icon: "⚖️" }
+                ]
+            },
+            "Unit 7": {
+                icon: "✊",
+                words: [
+                    { en: "accuse", bg: "обвинявам", icon: "👉" },
+                    { en: "aim", bg: "цел", icon: "🎯" },
+                    { en: "ban", bg: "забранявам", icon: "🚫" },
+                    { en: "belief", bg: "вяра / убеждение", icon: "🙏" },
+                    { en: "believe", bg: "вярвам", icon: "✨" },
+                    { en: "boycott", bg: "бойкотирам", icon: "🛑" },
+                    { en: "brave", bg: "смел", icon: "🦁" },
+                    { en: "campaign", bg: "кампания", icon: "📢" },
+                    { en: "clever", bg: "умен", icon: "🧠" },
+                    { en: "confident", bg: "уверен", icon: "💪" },
+                    { en: "criminal", bg: "престъпник", icon: "🦹" },
+                    { en: "donate", bg: "дарявам", icon: "🎁" },
+                    { en: "donation", bg: "дарение", icon: "💰" },
+                    { en: "effort", bg: "усилие", icon: "💦" },
+                    { en: "encourage", bg: "окуражавам", icon: "👏" },
+                    { en: "fair", bg: "справедлив", icon: "⚖️" },
+                    { en: "frightened", bg: "уплашен", icon: "😨" },
+                    { en: "generous", bg: "щедър", icon: "🤲" },
+                    { en: "heroic", bg: "героичен", icon: "🦸" },
+                    { en: "homeless", bg: "бездомен", icon: "🏚️" },
+                    { en: "honest", bg: "честен", icon: "🤝" },
+                    { en: "kind", bg: "мил", icon: "💖" },
+                    { en: "opportunity", bg: "възможност", icon: "🚪" },
+                    { en: "patient", bg: "търпелив", icon: "⏳" },
+                    { en: "petition", bg: "петиция", icon: "📝" },
+                    { en: "power", bg: "власт / сила", icon: "⚡" },
+                    { en: "prevent", bg: "предотвратявам", icon: "🛡️" },
+                    { en: "prison", bg: "затвор", icon: "⛓️" },
+                    { en: "protest", bg: "протестирам", icon: "🪧" },
+                    { en: "raise", bg: "събирам (средства)", icon: "📈" },
+                    { en: "reward", bg: "награда", icon: "🏆" },
+                    { en: "safe", bg: "безопасен", icon: "🔒" },
+                    { en: "sign", bg: "подписвам", icon: "✍️" },
+                    { en: "spread", bg: "разпространявам", icon: "🌐" },
+                    { en: "supporter", bg: "поддръжник", icon: "🙌" },
+                    { en: "unemployed", bg: "безработен", icon: "📉" },
+                    { en: "volunteer", bg: "доброволец", icon: "🙋" }
+                ]
+            },
+            "Unit 8": {
+                icon: "🎬",
+                words: [
+                    { en: "act", bg: "играя (роля)", icon: "🎭" },
+                    { en: "action", bg: "екшън / действие", icon: "💥" },
+                    { en: "actor", bg: "актьор", icon: "👨‍🎤" },
+                    { en: "adapt", bg: "адаптирам", icon: "🔄" },
+                    { en: "adventure", bg: "приключение", icon: "🗺️" },
+                    { en: "animation", bg: "анимация", icon: "🎨" },
+                    { en: "award", bg: "награда", icon: "🏆" },
+                    { en: "classic", bg: "класически", icon: "🏛️" },
+                    { en: "comedy", bg: "комедия", icon: "😂" },
+                    { en: "crime", bg: "престъпление", icon: "🕵️" },
+                    { en: "direct", bg: "режисирам", icon: "🎬" },
+                    { en: "director", bg: "режисьор", icon: "🪑" },
+                    { en: "drama", bg: "драма", icon: "🎭" },
+                    { en: "effect", bg: "ефект", icon: "✨" },
+                    { en: "entertaining", bg: "забавен", icon: "🎉" },
+                    { en: "episode", bg: "епизод", icon: "📺" },
+                    { en: "fantasy", bg: "фентъзи", icon: "🐉" },
+                    { en: "genre", bg: "жанр", icon: "📚" },
+                    { en: "horror", bg: "хорър", icon: "🧟" },
+                    { en: "humour", bg: "хумор", icon: "🤣" },
+                    { en: "imagination", bg: "въображение", icon: "💭" },
+                    { en: "journey", bg: "пътешествие", icon: "🚂" },
+                    { en: "musical", bg: "мюзикъл", icon: "🎶" },
+                    { en: "mystery", bg: "мистерия", icon: "❓" },
+                    { en: "nominate", bg: "номинирам", icon: "🌟" },
+                    { en: "part", bg: "роля / част", icon: "🧩" },
+                    { en: "premiere", bg: "премиера", icon: "🎟️" },
+                    { en: "prince", bg: "принц", icon: "🤴" },
+                    { en: "princess", bg: "принцеса", icon: "👸" },
+                    { en: "release", bg: "пускам (филм)", icon: "🚀" },
+                    { en: "role", bg: "роля", icon: "🎭" },
+                    { en: "romance", bg: "романтика", icon: "❤️" },
+                    { en: "science fiction", bg: "научна фантастика", icon: "🛸" },
+                    { en: "screen", bg: "екран", icon: "🖥️" },
+                    { en: "special effect", bg: "специален ефект", icon: "💥" },
+                    { en: "spy", bg: "шпионин", icon: "🕵️" },
+                    { en: "star", bg: "звезда", icon: "⭐" },
+                    { en: "thriller", bg: "трилър", icon: "🔪" },
+                    { en: "viewer", bg: "зрител", icon: "👀" },
+                    { en: "winner", bg: "победител", icon: "🥇" },
+                    { en: "writer", bg: "сценарист / писател", icon: "✍️" },
+                    { en: "zombie", bg: "зомби", icon: "🧟" }
+                ]
+            }
+        };
+
+        let currentUnit = "Starter Unit";
+        let db = JSON.parse(localStorage.getItem('english_vocab_progress')) || {};
+
+        function saveProgress() {
+            localStorage.setItem('english_vocab_progress', JSON.stringify(db));
+            updateOverallProgress();
+        }
+
+        function updateOverallProgress() {
+            let totalLearned = 0;
+            for (const key in db) {
+                if (db[key].learned) totalLearned++;
+            }
+            document.getElementById('progress-count').innerText = totalLearned;
+        }
+
+        function playAudio(word, event, btnId) {
+            if (event) event.stopPropagation();
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-GB';
+            window.speechSynthesis.speak(utterance);
+
+            if (!db[word]) db[word] = { listens: 0, flips: 0, learned: false };
+            db[word].listens = (db[word].listens || 0) + 1;
+            saveProgress();
+            
+            document.getElementById(`listen-count-${word}`).innerText = db[word].listens;
+            checkConditions(word);
+        }
+
+        function flipCard(word, cardInner) {
+            cardInner.parentElement.classList.toggle('flipped');
+            
+            if (cardInner.parentElement.classList.contains('flipped')) {
+                if (!db[word]) db[word] = { listens: 0, flips: 0, learned: false };
+                db[word].flips = (db[word].flips || 0) + 1;
+                saveProgress();
+                
+                document.getElementById(`flip-count-${word}`).innerText = db[word].flips;
+                checkConditions(word);
+            }
+        }
+
+        function checkConditions(word) {
+            const data = db[word] || { listens: 0, flips: 0 };
+            const listenBadge = document.getElementById(`listen-badge-${word}`);
+            const flipBadge = document.getElementById(`flip-badge-${word}`);
+            
+            if (data.listens >= 10) { listenBadge.classList.replace('bg-gray-200', 'bg-green-200'); listenBadge.classList.replace('text-gray-700', 'text-green-800'); }
+            if (data.flips >= 10) { flipBadge.classList.replace('bg-gray-200', 'bg-green-200'); flipBadge.classList.replace('text-gray-700', 'text-green-800'); }
+        }
+
+        function setupCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#4F46E5';
+
+            function start(e) {
+                isDrawing = true;
+                draw(e);
+            }
+            function stop() {
+                isDrawing = false;
+                ctx.beginPath();
+            }
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                
+                if (clientX === undefined || clientY === undefined) return;
+                
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stop);
+            canvas.addEventListener('mouseout', stop);
+
+            canvas.addEventListener('touchstart', start, {passive: false});
+            canvas.addEventListener('touchmove', draw, {passive: false});
+            canvas.addEventListener('touchend', stop);
+        }
+
+        function clearCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function tryMarkLearned(word) {
+            const inputVal = document.getElementById(`input-${word}`).value.trim().toLowerCase();
+            const data = db[word] || { listens: 0, flips: 0 };
+            const errorMsg = document.getElementById(`error-${word}`);
+
+            if (inputVal !== word.toLowerCase()) {
+                errorMsg.innerText = "Грешка в изписването! Опитай пак.";
+                errorMsg.classList.remove('hidden');
+                document.getElementById(`input-${word}`).classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => document.getElementById(`input-${word}`).classList.remove('border-red-500', 'bg-red-50'), 1500);
+                return;
+            }
+            if (data.listens < 10) {
+                errorMsg.innerText = `Слушай думата още ${10 - data.listens} пъти.`;
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            if (data.flips < 10) {
+                errorMsg.innerText = `Обърни картата още ${10 - data.flips} пъти.`;
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+            data.learned = true;
+            saveProgress();
+            
+            const cardElement = document.getElementById(`card-main-${word}`);
+            cardElement.classList.add('border-green-400', 'bg-green-50');
+            document.getElementById(`checkbox-${word}`).innerHTML = `<i class="fa-solid fa-check-circle text-4xl text-green-500 drop-shadow-sm"></i>`;
+        }
+
+        function renderTabs() {
+            const tabsContainer = document.getElementById('tabs-container');
+            tabsContainer.innerHTML = '';
+            
+            Object.keys(wordData).forEach(unit => {
+                const btn = document.createElement('button');
+                const isSelected = unit === currentUnit;
+                btn.className = `whitespace-nowrap px-4 py-2 rounded-lg font-semibold transition-all ${isSelected ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
+                btn.innerHTML = `${wordData[unit].icon} ${unit}`;
+                btn.onclick = () => {
+                    currentUnit = unit;
+                    renderTabs();
+                    renderCards();
+                };
+                tabsContainer.appendChild(btn);
+            });
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            const words = wordData[currentUnit].words;
+
+            words.forEach(item => {
+                const w = item.en;
+                const data = db[w] || { listens: 0, flips: 0, learned: false };
+                const isLearned = data.learned;
+                
+                const cardHTML = `
+                <div id="card-main-${w}" class="bg-white rounded-2xl shadow-lg border-2 ${isLearned ? 'border-green-400 bg-green-50' : 'border-gray-100'} p-4 flex flex-col transition-all">
+                    
+                    <div class="card card-perspective h-48 w-full cursor-pointer mb-4" onclick="flipCard('${w}', this.children[0])">
+                        <div class="card-inner rounded-xl shadow-md border border-gray-200">
+                            <div class="card-front bg-indigo-50 flex flex-col items-center justify-center rounded-xl p-4">
+                                <h2 class="text-3xl font-bold text-gray-800">${w}</h2>
+                                <p class="text-sm text-gray-500 mt-2">Кликни за превод</p>
+                            </div>
+                            <div class="card-back bg-yellow-50 flex flex-col items-center justify-center rounded-xl p-4">
+                                <span class="text-5xl mb-2 drop-shadow-md">${item.icon}</span>
+                                <h3 class="text-2xl font-black text-gray-900 text-center uppercase">${item.bg}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg mb-4">
+                        <button onclick="playAudio('${w}', event)" class="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-transform active:scale-95">
+                            <i class="fa-solid fa-volume-high text-xl"></i>
+                        </button>
+                        <div class="flex gap-2 text-sm font-semibold">
+                            <span id="listen-badge-${w}" class="px-3 py-1 rounded-full ${data.listens >= 10 ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-700'}">
+                                <i class="fa-solid fa-headphones"></i> <span id="listen-count-${w}">${data.listens}</span>/10
+                            </span>
+                            <span id="flip-badge-${w}" class="px-3 py-1 rounded-full ${data.flips >= 10 ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-700'}">
+                                <i class="fa-solid fa-arrows-rotate"></i> <span id="flip-count-${w}">${data.flips}</span>/10
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-1 px-1">
+                            <span class="text-xs text-gray-500 font-bold uppercase tracking-wider">Нарисувай думата</span>
+                            <button onclick="clearCanvas('canvas-${w}')" class="text-xs text-red-500 hover:text-red-700 font-bold"><i class="fa-solid fa-eraser"></i> Изчисти</button>
+                        </div>
+                        <canvas id="canvas-${w}" width="400" height="100" class="w-full h-24 bg-[#fafafa] border-2 border-dashed border-gray-300 rounded-lg cursor-crosshair"></canvas>
+                    </div>
+
+                    <div class="mt-auto">
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Напиши я правилно</p>
+                        <input type="text" id="input-${w}" class="w-full border-2 border-gray-300 rounded-lg p-3 text-lg font-medium text-center focus:outline-none focus:border-indigo-500 mb-2 transition-colors" placeholder="Напиши на английски..." ${isLearned ? 'disabled value="'+w+'"' : ''}>
+                        
+                        <p id="error-${w}" class="text-red-500 text-sm text-center font-bold mb-3 hidden"></p>
+                        
+                        <div class="flex justify-center" id="checkbox-${w}">
+                            ${isLearned 
+                                ? `<i class="fa-solid fa-check-circle text-4xl text-green-500 drop-shadow-sm"></i>` 
+                                : `<button onclick="tryMarkLearned('${w}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors">Отбележи като научена</button>`
+                            }
+                        </div>
+                    </div>
+
+                </div>`;
+                
+                container.innerHTML += cardHTML;
+            });
+
+            words.forEach(item => {
+                setupCanvas(`canvas-${item.en}`);
+            });
+        }
+
+        updateOverallProgress();
+        renderTabs();
+        renderCards();
+
+    </script>
+</body>
+</html>
